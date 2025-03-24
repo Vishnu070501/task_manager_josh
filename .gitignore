@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distributions
+*.egg
+*.whl
+*.egg-info
+dist/
+build/
+eggs/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Django stuff:
+*.log
+*.pot
+*.sqlite3
+*.sqlite3-journal
+local_settings.py
+db.sqlite3
+
+# Media files
+media/*
+
+# Uploaded files
+uploads/*
+
+# System files
+.DS_Store
+Thumbs.db
