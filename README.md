@@ -434,3 +434,5 @@ This project implements a set of APIs for a task management application using Dj
 -   The database is PostgreSQL.
 -   A soft delete approach is used for task deletion, marking tasks as inactive rather than removing them from the database.
 -   Manual data construction is used in some API responses to improve performance by avoiding the overhead of serializers with `many=True`.
+-   **Task Status Management**: The status of a task is managed in a join table (bridge table) so that each task assigned to a user can have its own status. This allows for individual tracking of task progress per user.
+-   **Custom User and Permissions**: The default Django user model and permissions have been overridden to better suit the needs of this project. This allows for more flexible user management and permission handling.
