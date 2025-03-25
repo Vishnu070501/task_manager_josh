@@ -9,7 +9,7 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from .models import Task, UserTask
-from .serializers import TaskSerializer
+from .serializers import TaskSerializer, UserTaskSerializer
 
 class HasCustomPermission(BasePermission):
     def has_permission(self, request, view):
@@ -42,7 +42,7 @@ class AssignTask(APIView):
     permission_classes = [IsAuthenticated, HasCustomPermission]
     permission_codename = 'assign_task'
     @transaction.atomic
-    def put(self, request):
+    def post(self, request):
         task_id = request.query_params.get('task_id')
         user_ids = request.data.get('user_ids')
 
@@ -163,27 +163,38 @@ class DeleteTask(APIView):
         id = request.query_params.get('id')
         if id is None:
             return Response({
-                "success":False,
-                "status":404,
-                "message":"id not provided"
-            },status=status.HTTP_404_NOT_FOUND)
+                "success": False,
+                "status": 400,
+                "message": "Task ID is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             task = Task.objects.get(id=id, is_active=True)
         except Task.DoesNotExist:
             return Response({
-                "success":False,
-                "status":404,
-                "message":"Task not found"
-            },status=status.HTTP_404_NOT_FOUND)
+                "success": False,
+                "status": 404,
+                "message": "Task not found or is inactive"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check for users with open or in_progress tasks
+        user_tasks = UserTask.objects.filter(task=task, status__in=['open', 'in_progress'])
+        if user_tasks.exists():
+            users_with_pending_tasks = [ut.user.email for ut in user_tasks]
+            return Response({
+                "success": False,
+                "status": 400,
+                "message": "Cannot delete task. The following users have this task in open or in progress status:",
+                "users": users_with_pending_tasks
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         task.is_active = False
         task.save()
-        serializer = TaskSerializer(task)
         return Response({
-            "success":True,
-            "status":200,
-            "message":"Task deleted successfully",
-            "data":serializer.data
-        },status=status.HTTP_200_OK)
+            "success": True,
+            "status": 200,
+            "message": "Task deleted successfully"
+        }, status=status.HTTP_200_OK)
 
 class UpdateTask(APIView):
     permission_classes = [IsAuthenticated, HasCustomPermission]
@@ -228,34 +239,49 @@ class UpdateTask(APIView):
 class FetchAllTasks(APIView):
     permission_classes = [IsAuthenticated, HasCustomPermission]
     permission_codename = 'fetch_task'
-    def get(self,request):
+
+    def get(self, request):
         id = request.query_params.get('id')
         if id is None:
-            tasks = Task.objects.filter(assigned_users=request.user, is_active=True)
-            serializer = TaskSerializer(tasks,many=True)
+            tasks = Task.objects.filter(is_active=True)
+            tasks_data = [{
+                "id": task.id,
+                "name": task.name,
+                "description": task.description,
+                "created_at": task.created_at,
+                "task_type": task.task_type,
+                "is_active": task.is_active
+            } for task in tasks]
             return Response({
-                "success":True,
-                "status":200,
-                "message":"Tasks fetched successfully",
-                "data":serializer.data
-            },status=status.HTTP_200_OK)
+                "success": True,
+                "status": 200,
+                "message": "Tasks fetched successfully",
+                "data": tasks_data
+            }, status=status.HTTP_200_OK)
         else:
             try:
                 task = Task.objects.get(id=id, is_active=True)
-                serializer = TaskSerializer(task)
+                task_data = {
+                    "id": task.id,
+                    "name": task.name,
+                    "description": task.description,
+                    "created_at": task.created_at,
+                    "task_type": task.task_type,
+                    "is_active": task.is_active
+                }
                 return Response({
-                    "success":True,
-                    "status":200,
-                    "message":"Task fetched successfully",
-                    "data":serializer.data
-                },status=status.HTTP_200_OK)
+                    "success": True,
+                    "status": 200,
+                    "message": "Task fetched successfully",
+                    "data": task_data
+                }, status=status.HTTP_200_OK)
             except Task.DoesNotExist:
                 return Response({
-                    "success":False,
-                    "status":404,
-                    "message":"Task not found"
-                },status=status.HTTP_404_NOT_FOUND) 
-                
+                    "success": False,
+                    "status": 404,
+                    "message": "Task not found"
+                }, status=status.HTTP_404_NOT_FOUND)
+
 class UpdateUserTaskStatus(APIView):
     permission_classes = [IsAuthenticated]
     permission_codename = 'update_user_task_status'

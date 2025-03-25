@@ -10,6 +10,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from rest_framework.permissions import IsAuthenticated, BasePermission
+from django.shortcuts import get_object_or_404
+from users.models import CustomPermission
 
 from .serializers import UserSignupSerializer
 
@@ -152,4 +155,78 @@ class SigninView(APIView):
             'success': True,
             'status': 200,
             'data': user_data
+        }, status=status.HTTP_200_OK)
+
+class AddPermissionToUser(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id, permission_codename):
+        User = get_user_model()
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": 404,
+                "message": "User not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            permission = CustomPermission.objects.get(codename=permission_codename)
+        except CustomPermission.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": 404,
+                "message": "Permission not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if permission in user.custom_permissions.all():
+            return Response({
+                "success": False,
+                "status": 400,
+                "message": "Permission already exists for this user"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user.custom_permissions.add(permission)
+        return Response({
+            "success": True,
+            "status": 200,
+            "message": "Permission added to user successfully"
+        }, status=status.HTTP_200_OK)
+
+class RemovePermissionFromUser(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id, permission_codename):
+        User = get_user_model()
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": 404,
+                "message": "User not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            permission = CustomPermission.objects.get(codename=permission_codename)
+        except CustomPermission.DoesNotExist:
+            return Response({
+                "success": False,
+                "status": 404,
+                "message": "Permission not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if permission not in user.custom_permissions.all():
+            return Response({
+                "success": False,
+                "status": 400,
+                "message": "Permission does not exist for this user"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user.custom_permissions.remove(permission)
+        return Response({
+            "success": True,
+            "status": 200,
+            "message": "Permission removed from user successfully"
         }, status=status.HTTP_200_OK) 

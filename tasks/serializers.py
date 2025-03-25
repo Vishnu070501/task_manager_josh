@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Task
+from .models import Task, UserTask
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,13 +8,14 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'email')  # Include relevant user fields
 
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_users = UserSerializer(many=True, read_only=True)
-    task_type = serializers.ChoiceField(choices=Task.TASK_TYPE_CHOICES)
-    status = serializers.ChoiceField(choices=Task.STATUS_CHOICES)
-
     class Meta:
         model = Task
-        fields = ('id', 'name', 'description', 'created_at', 'task_type', 'completed_at', 'status', 'assigned_users', 'is_active')
+        fields = ('id', 'name', 'description', 'created_at', 'task_type', 'is_active')
+
+class UserTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTask
+        fields = ('id', 'user', 'task', 'status', 'assigned_at', 'completed_at')
 
 class AssignTaskSerializer(serializers.Serializer):
     user_ids = serializers.ListField(child=serializers.IntegerField())
