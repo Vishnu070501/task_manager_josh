@@ -2,27 +2,96 @@
 
 ## Description
 
-This project implements a set of APIs for a task management application using Django and Django REST Framework. It allows users to create tasks, assign tasks to users, and retrieve tasks assigned to specific users.
+This project implements a set of APIs for a task management application using Django and Django REST Framework. It allows users to create tasks, assign tasks to users, update task statuses, and retrieve tasks assigned to specific users.
 
-## Requirements
+## Requirements and API Mapping
 
--   Python 3.6+
--   Django 4.0+
--   Django REST Framework
--   djangorestframework-simplejwt
--   python-dotenv
--   psycopg2-binary
+1. **API to create a task**
+   - **Description**: Allows the creation of new tasks with a name and description.
+   - **Implemented in**: `POST /api/tasks/create/`
+   - **Sample Request**:
+     ```json
+     {
+       "name": "New Task",
+       "description": "This is a new task."
+     }
+     ```
+   - **Sample Response**:
+     ```json
+     {
+       "success": true,
+       "status": 201,
+       "message": "Task created successfully",
+       "data": {
+         "id": 1,
+         "name": "New Task",
+         "description": "This is a new task.",
+         "created_at": "2024-05-16T14:24:22.408122Z",
+         "task_type": null,
+         "is_active": true
+       }
+     }
+     ```
+
+2. **API to assign a task to a user**
+   - **Description**: Enables assigning a task to one or multiple users.
+   - **Implemented in**: `POST /api/tasks/assign/`
+   - **Query Parameters**: `task_id=<task_id>`
+   - **Sample Request**:
+     ```json
+     {
+       "user_ids": [1, 2]
+     }
+     ```
+   - **Sample Response**:
+     ```json
+     {
+       "success": true,
+       "status": 200,
+       "message": "Task assigned successfully",
+       "data": {
+         "task_id": 1,
+         "task_name": "Sample Task",
+         "assigned_users": ["user1@example.com", "user2@example.com"]
+       }
+     }
+     ```
+
+3. **API to get tasks with their details for a specific user**
+   - **Description**: Fetches all tasks assigned to a particular user.
+   - **Implemented in**: `GET /api/tasks/user-tasks/`
+   - **Sample Response**:
+     ```json
+     {
+       "success": true,
+       "status": 200,
+       "message": "Tasks fetched successfully",
+       "data": [
+         {
+           "id": 1,
+           "name": "Sample Task",
+           "description": "This is a sample task description.",
+           "created_at": "2024-05-16T14:24:22.408122Z",
+           "task_type": null,
+           "is_active": true,
+           "status": "Open",
+           "assigned_at": "2024-05-16T14:24:22.408122Z",
+           "completed_at": null
+         }
+       ]
+     }
+     ```
 
 ## Setup
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
 
     ```bash
     git clone <repository_url>
     cd <project_directory>
     ```
 
-2.  **Create a virtual environment:**
+2. **Create a virtual environment:**
 
     ```bash
     python -m venv venv
@@ -30,15 +99,13 @@ This project implements a set of APIs for a task management application using Dj
     venv\Scripts\activate  # On Windows
     ```
 
-3.  **Install dependencies:**
+3. **Install dependencies:**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-    (Create a `requirements.txt` file using `pip freeze > requirements.txt`)
-
-4.  **Create a `.env` file:**
+4. **Create a `.env` file:**
 
     Create a `.env` file in the root directory with the following content:
 
@@ -50,16 +117,16 @@ This project implements a set of APIs for a task management application using Dj
     DB_PORT=5432
     ```
 
-    Replace `your_db_user` and `your_db_password` with your actual database credentials.
+5. **Apply migrations:**
 
-5.  **Apply migrations:**
+    Before applying migrations, note that there are custom migrations that will create all the required custom user permissions. Run the following commands:
 
     ```bash
     python manage.py makemigrations
     python manage.py migrate
     ```
 
-6.  **Run the development server:**
+6. **Run the development server:**
 
     ```bash
     python manage.py runserver
@@ -69,7 +136,7 @@ This project implements a set of APIs for a task management application using Dj
 
 ### User Authentication
 
--   **Signup:** `POST /api/signup/`
+-   **Signup:** `POST /api/users/signup/`
     -   Request body:
 
         ```json
@@ -90,7 +157,6 @@ This project implements a set of APIs for a task management application using Dj
           "message": "User Created Successfully",
           "data": {
             "email": "testuser@example.com",
-            "password": "SecurePassword123",
             "name": "Test User",
             "mobile": "123-456-7890",
             "my_field": "Some additional info"
@@ -98,7 +164,7 @@ This project implements a set of APIs for a task management application using Dj
         }
         ```
 
--   **Signin:** `POST /api/signin/`
+-   **Signin:** `POST /api/users/signin/`
     -   Request body:
 
         ```json
@@ -127,7 +193,7 @@ This project implements a set of APIs for a task management application using Dj
         }
         ```
 
--   **Refresh Token:** `POST /api/token/refresh/`
+-   **Refresh Token:** `POST /api/users/token/refresh/`
     -   Request body:
 
         ```json
@@ -148,13 +214,13 @@ This project implements a set of APIs for a task management application using Dj
         }
         ```
 
--   **Fetch Users:** `GET /api/users/`
+-   **Fetch Users:** `GET /api/users/fetch-users/`
     -   Response:
 
         ```json
         {
           "success": true,
-          "message": "Users Fetched SuccessFully",
+          "message": "Users Fetched Successfully",
           "data": [
             {
               "id": 2,
@@ -192,19 +258,21 @@ This project implements a set of APIs for a task management application using Dj
 
         ```json
         {
-          "id": 1,
-          "name": "Sample Task",
-          "description": "This is a sample task description.",
-          "created_at": "2024-05-16T14:24:22.408122Z",
-          "task_type": null,
-          "completed_at": null,
-          "status": "Open",
-          "assigned_users": [],
-          "is_active": true
+          "success": true,
+          "status": 201,
+          "message": "Task created successfully",
+          "data": {
+            "id": 1,
+            "name": "Sample Task",
+            "description": "This is a sample task description.",
+            "created_at": "2024-05-16T14:24:22.408122Z",
+            "task_type": null,
+            "is_active": true
+          }
         }
         ```
 
--   **Assign Task:** `PUT /api/tasks/assign/?task_id=<task_id>`
+-   **Assign Task:** `POST /api/tasks/assign/`
     -   Request body:
 
         ```json
@@ -221,31 +289,41 @@ This project implements a set of APIs for a task management application using Dj
           "status": 200,
           "message": "Task assigned successfully",
           "data": {
-            "id": 1,
-            "name": "Sample Task",
-            "description": "This is a sample task description.",
-            "created_at": "2024-05-16T14:24:22.408122Z",
-            "task_type": null,
-            "completed_at": null,
-            "status": "Open",
-            "assigned_users": [
-              {
-                "id": 1,
-                "username": "admin",
-                "email": "admin@example.com"
-              },
-              {
-                "id": 2,
-                "username": "testuser",
-                "email": "testuser@example.com"
-              }
-            ],
-            "is_active": true
+            "task_id": 1,
+            "task_name": "Sample Task",
+            "assigned_users": ["admin@example.com", "testuser@example.com"]
           }
         }
         ```
 
--   **Get User Tasks:** `GET /api/users/tasks/?user_id=<user_id>`
+-   **Update User Task Status:** `PUT /api/tasks/update-my-task-status/`
+    -   Request body:
+
+        ```json
+        {
+          "task_id": 1,
+          "status": "in_progress"
+        }
+        ```
+
+    -   Response:
+
+        ```json
+        {
+          "success": true,
+          "status": 200,
+          "message": "Task status updated successfully",
+          "data": {
+            "task_id": 1,
+            "task_name": "Sample Task",
+            "status": "in_progress",
+            "assigned_at": "2024-05-16T14:24:22.408122Z",
+            "completed_at": null
+          }
+        }
+        ```
+
+-   **Get User Tasks:** `GET /api/tasks/user-tasks/`
     -   Response:
 
         ```json
@@ -260,21 +338,10 @@ This project implements a set of APIs for a task management application using Dj
               "description": "This is a sample task description.",
               "created_at": "2024-05-16T14:24:22.408122Z",
               "task_type": null,
-              "completed_at": null,
+              "is_active": true,
               "status": "Open",
-              "assigned_users": [
-                {
-                  "id": 1,
-                  "username": "admin",
-                  "email": "admin@example.com"
-                },
-                {
-                  "id": 2,
-                  "username": "testuser",
-                  "email": "testuser@example.com"
-                }
-              ],
-              "is_active": true
+              "assigned_at": "2024-05-16T14:24:22.408122Z",
+              "completed_at": null
             }
           ]
         }
@@ -286,8 +353,7 @@ This project implements a set of APIs for a task management application using Dj
         ```json
         {
           "name": "Updated Task Name",
-          "description": "Updated task description",
-          "status": "Completed"
+          "description": "Updated task description"
         }
         ```
 
@@ -304,20 +370,6 @@ This project implements a set of APIs for a task management application using Dj
             "description": "Updated task description",
             "created_at": "2024-05-16T14:24:22.408122Z",
             "task_type": null,
-            "completed_at": null,
-            "status": "Completed",
-            "assigned_users": [
-              {
-                "id": 1,
-                "username": "admin",
-                "email": "admin@example.com"
-              },
-              {
-                "id": 2,
-                "username": "testuser",
-                "email": "testuser@example.com"
-              }
-            ],
             "is_active": true
           }
         }
@@ -330,29 +382,7 @@ This project implements a set of APIs for a task management application using Dj
         {
           "success": true,
           "status": 200,
-          "message": "Task deleted successfully",
-          "data": {
-            "id": 1,
-            "name": "Updated Task Name",
-            "description": "Updated task description",
-            "created_at": "2024-05-16T14:24:22.408122Z",
-            "task_type": null,
-            "completed_at": null,
-            "status": "Completed",
-            "assigned_users": [
-              {
-                "id": 1,
-                "username": "admin",
-                "email": "admin@example.com"
-              },
-              {
-                "id": 2,
-                "username": "testuser",
-                "email": "testuser@example.com"
-              }
-            ],
-            "is_active": false
-          }
+          "message": "Task deleted successfully"
         }
         ```
 
@@ -371,39 +401,36 @@ This project implements a set of APIs for a task management application using Dj
               "description": "Updated task description",
               "created_at": "2024-05-16T14:24:22.408122Z",
               "task_type": null,
-              "completed_at": null,
-              "status": "Completed",
-              "assigned_users": [
-                {
-                  "id": 1,
-                  "username": "admin",
-                  "email": "admin@example.com"
-                },
-                {
-                  "id": 2,
-                  "username": "testuser",
-                  "email": "testuser@example.com"
-                }
-              ],
               "is_active": true
             }
           ]
         }
         ```
 
-## Test Credentials
+## API Logic and Constraints
 
-Provide test credentials for a superuser and a regular user.
+### Task Management
 
--   **Superuser:**
-    -   Email: `admin@example.com`
-    -   Password: `admin123`
--   **Regular User:**
-    -   Email: `testuser@example.com`
-    -   Password: `SecurePassword123`
+- **Delete Task:**
+  - A task can only be deleted if there are no associated `UserTask` entries with a status of "open" or "in_progress".
+  - Deletion is performed using a soft delete approach, marking the task as inactive.
+
+- **Update User Task Status:**
+  - Task status transitions are restricted to maintain logical flow:
+    - "Open" tasks can be moved to "in_progress" or "blocked".
+    - "Blocked" tasks can be moved to "in_progress" or "open".
+    - "In-progress" tasks can be moved to "completed" or "blocked".
+  - Once a task is marked as "completed", its status cannot be changed.
+
+### User Authentication and Permissions
+
+- All API endpoints require custom permissions. Ensure that the necessary permissions are added to each user.
+- Transactions are used to ensure atomicity. If an error occurs during a transaction, the entire operation is rolled back.
 
 ## Notes
 
 -   This API uses JWT (JSON Web Tokens) for authentication.
 -   The access token lifetime is 5 minutes, and the refresh token lifetime is 7 days.
 -   The database is PostgreSQL.
+-   A soft delete approach is used for task deletion, marking tasks as inactive rather than removing them from the database.
+-   Manual data construction is used in some API responses to improve performance by avoiding the overhead of serializers with `many=True`.
